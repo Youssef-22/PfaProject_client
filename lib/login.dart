@@ -4,6 +4,7 @@ import 'package:flutter_application_1/home.dart';
 import 'package:flutter_application_1/register.dart';
 import 'package:flutter_application_1/user.dart';
 import 'package:http/http.dart' as http;
+import 'package:get/get.dart';
 import 'helper_functions.dart' as HelperFunctions;
 import 'theme/text_field_theme.dart';
 
@@ -17,7 +18,7 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   
   final _formkey = GlobalKey<FormState>();
-  final String url = "http://192.168.100.113:8080/user/login";
+  final String url = "http://192.168.100.113:8080/user/Login";
    
   bool _obscureText = true;
   late User user = User(
@@ -30,45 +31,69 @@ class _LoginState extends State<Login> {
   );
 
   Future<void> save() async {
-    var res = await http.post(
-      Uri.parse(url),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'email': user.email,
-        'password': user.password,
-      }),
+  var res = await http.post(
+    Uri.parse(url),
+    headers: {'Content-Type': 'application/json'},
+    body: json.encode({
+      'email': user.email,
+      'password': user.password,
+    }),
+  );
+  if (res.statusCode == 200) {
+    // Successful login
+    var userData = json.decode(res.body);
+    setState(() {
+      user = User.fromJson(userData); // Update user object with data from server
+    });
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => Home(user: user)),
     );
-    if (res.statusCode == 200) {
-      // Successful login
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => Home()),
-      );
-    } else {
-      // Invalid credentials
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text("Error"),
-            content: Text("Invalid email or password."),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text("OK"),
-              ),
-            ],
-          );
-        },
-      );
-    }
+  } else if (res.statusCode == 401) {
+    // Invalid credentials
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Error"),
+          content: Text("Invalid email or password."),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  } else {
+    // Handle other HTTP status codes
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Error"),
+          content: Text("Failed to connect to the server."),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
-    final dark = HelperFunctions.isDarkMode(context);
+    var dark = HelperFunctions.isDarkMode(context);
     return Scaffold(
       
       body: SingleChildScrollView(
@@ -78,7 +103,17 @@ class _LoginState extends State<Login> {
           
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            
+            IconButton(
+  onPressed: () {
+    // Toggle theme mode
+    Get.changeThemeMode(Get.isDarkMode ? ThemeMode.light : ThemeMode.dark);
+  },
+  icon: Icon(
+    Get.isDarkMode ? Icons.sunny : Icons.nightlight,
+  ),
+),
+                        
+                    
             Image(
               height: 150,
               image: AssetImage(dark ? 'lib/images/eelogowhite.png' : 'lib/images/eelogo.png'),
@@ -104,10 +139,10 @@ class _LoginState extends State<Login> {
                         prefixIconColor: Colors.grey,
                         suffixIconColor: Colors.grey,
                         // constraints: const BoxConstraints.expand (height: 14.inputFieldHeight),
-                        labelStyle: const TextStyle().copyWith(fontSize: 14, color: Colors.black),
-                        hintStyle: const TextStyle().copyWith(fontSize: 14, color: Colors.black),
+                        labelStyle: const TextStyle().copyWith(fontSize: 14, color:  dark ? Colors.white : Colors.black,),
+                        hintStyle: const TextStyle().copyWith(fontSize: 14, color: dark ? Colors.white : Colors.black,),
                         errorStyle: const TextStyle().copyWith(fontStyle: FontStyle.normal),
-                        floatingLabelStyle: const TextStyle().copyWith(color: Colors.black.withOpacity(0.8)),
+                        floatingLabelStyle: const TextStyle().copyWith(color:  dark ? Colors.white.withOpacity(0.8) : Colors.black12.withOpacity(0.8)),
                         border: const OutlineInputBorder().copyWith(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: const BorderSide (width: 1, color: Colors.grey),
@@ -117,10 +152,13 @@ class _LoginState extends State<Login> {
                           borderRadius: BorderRadius.circular(14),
                         borderSide: const BorderSide (width: 1, color: Colors.grey),
                         ),
-                        focusedBorder:const OutlineInputBorder().copyWith(
-                        borderRadius: BorderRadius.circular (14),
-                        borderSide: const BorderSide (width: 1, color: Colors.black12),
-                        ),
+                        focusedBorder: OutlineInputBorder(
+  borderRadius: BorderRadius.circular(14),
+  borderSide: BorderSide(
+    width: 1,
+    color: dark ? Colors.white : Colors.black12,
+  ),
+),
                         errorBorder: const OutlineInputBorder().copyWith(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: const BorderSide (width: 1, color: Colors.red),
@@ -151,10 +189,10 @@ class _LoginState extends State<Login> {
                         prefixIconColor: Colors.grey,
                         suffixIconColor: Colors.grey,
                         // constraints: const BoxConstraints.expand (height: 14.inputFieldHeight),
-                        labelStyle: const TextStyle().copyWith(fontSize: 14, color: Colors.black),
-                        hintStyle: const TextStyle().copyWith(fontSize: 14, color: Colors.black),
+                        labelStyle: const TextStyle().copyWith(fontSize: 14, color:  dark ? Colors.white : Colors.black),
+                        hintStyle: const TextStyle().copyWith(fontSize: 14, color:  dark ? Colors.white : Colors.black),
                         errorStyle: const TextStyle().copyWith(fontStyle: FontStyle.normal),
-                        floatingLabelStyle: const TextStyle().copyWith(color: Colors.black.withOpacity(0.8)),
+                        floatingLabelStyle: const TextStyle().copyWith(color:  dark ? Colors.white.withOpacity(0.8) : Colors.black12.withOpacity(0.8)),
                         border: const OutlineInputBorder().copyWith(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: const BorderSide (width: 1, color: Colors.grey),
@@ -166,7 +204,7 @@ class _LoginState extends State<Login> {
                         ),
                         focusedBorder:const OutlineInputBorder().copyWith(
                         borderRadius: BorderRadius.circular (14),
-                        borderSide: const BorderSide (width: 1, color: Colors.black12),
+                        borderSide: BorderSide (width: 1, color:  dark ? Colors.white : Colors.black12),
                         ),
                         errorBorder: const OutlineInputBorder().copyWith(
                         borderRadius: BorderRadius.circular(14),
@@ -216,10 +254,14 @@ class _LoginState extends State<Login> {
                   )
                   ,)),
 
+
+
                   SizedBox(height: 16.0,),
+
+
                   SizedBox(width: double.infinity,child:OutlinedButton(onPressed: (){
                     Navigator.push(context, MaterialPageRoute(builder: (context)=>Register()));
-                  }, child: Text('Create Account'),
+                  }, child: Text('Create Account',style: TextStyle(color: dark ? Colors.white : Colors.black),),
                   style: ButtonStyle(
                     side: MaterialStateProperty.all<BorderSide>(
                       BorderSide(
@@ -241,7 +283,7 @@ class _LoginState extends State<Login> {
   children: [
     Flexible(
       child: Divider(
-        color: dark ? Colors.white : Colors.black,
+        color:  Colors.grey,
         thickness: 0.5,
         indent: 60,
         endIndent: 5,
@@ -250,7 +292,7 @@ class _LoginState extends State<Login> {
     Text("Or Sign In with", style: Theme.of(context).textTheme.labelMedium),
     Flexible(
       child: Divider(
-        color: dark ? Colors.white : Colors.black,
+        color:  Colors.grey,
         thickness: 0.5,
         indent: 5,
         endIndent: 60,
@@ -262,36 +304,23 @@ class _LoginState extends State<Login> {
 SizedBox(height: 16,),
 
 
-SizedBox(width: double.infinity,child:ElevatedButton(onPressed:() {
-                    
-                     
-                  },
-                  
+SizedBox(width: double.infinity,child:ElevatedButton(onPressed:() {    }, 
                   child: Row(
                      mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                 Image(image: AssetImage('lib/images/gglogo2.png'),height: 30,width: 30,),
                    
                 SizedBox(width: 10), // Adjust spacing between image and text as needed
-                Text(
-                  'Google',
-                  style: TextStyle(color: Colors.white),
-                   ),
+                Text('Google Auth',style: TextStyle(color: dark ? Colors.black : Colors.white),)
                   ]),
                   
                   style: ButtonStyle(
                      backgroundColor: MaterialStateProperty.all<Color>(
-                     Colors.black,
+                     dark ? Colors.white : Colors.black
                         ),
                         
                   )
-                  ,)),
-
-
-
-           
-
-
+                  )),
           ],
         ),
       ),
